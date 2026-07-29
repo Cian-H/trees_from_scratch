@@ -11,11 +11,13 @@
          (- 1.0))))
 
 (defn entropy [labels]
-  (->> (class-probabilities labels)
-       (filter pos?)
-       (map (fn [p] (* p (log2 p))))
-       (reduce + 0.0)
-       -))
+  (if (empty? labels)
+    0.0
+    (->> (class-probabilities labels)
+         (filter pos?)
+         (map (fn [p] (* p (log2 p))))
+         (reduce + 0.0)
+         -)))
 
 (defn misclassification-rate [labels]
   (let [probs (class-probabilities labels)]
@@ -47,9 +49,12 @@
   (if (empty? values)
     0.0
     (let [avg (mean values)]
-      (->> values
-           (filter pos?)
-           (map #(- (* % (Math/log (/ % avg)))
-                    (- % avg)))
-           (reduce + 0.0)
-           (* 2.0)))))
+      (if (<= avg 0.0)
+        0.0
+        (->> values
+             (filter pos?)
+             (map #(- (* % (Math/log (/ % avg)))
+                      (- % avg)))
+             (reduce + 0.0)
+             (* 2.0))))))
+

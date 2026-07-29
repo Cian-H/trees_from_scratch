@@ -7,14 +7,13 @@
   (testing "creating a leaf node (the answer)"
     (let [leaf (tree/make-leaf "Spam")]
       (is (= "Spam" (:prediction leaf)))
-      (is (nil? (:rule leaf)))
+      (is (nil? (:predicate leaf)))
       (is (nil? (:left leaf)))
       (is (nil? (:right leaf)))))
 
   (testing "creating an internal node (the question)"
-    (let [rule {:feature :age, :threshold 30}
-          node (tree/make-node rule nil nil)]
-      (is (= rule (:rule node)))
+    (let [node (tree/make-continuous-split :age 30 nil nil)]
+      (is (fn? (:predicate node)))
       (is (nil? (:prediction node)))
       (is (nil? (:left node)))
       (is (nil? (:right node))))))
@@ -25,8 +24,7 @@
     ; Rule: If :age <= 30, predict "Young", else predict "Old"
     (let [leaf-left  (tree/make-leaf "Young")
           leaf-right (tree/make-leaf "Old")
-          rule       {:feature :age, :threshold 30}
-          dt-tree    (tree/make-node rule leaf-left leaf-right)]
+          dt-tree    (tree/make-continuous-split :age 30 leaf-left leaf-right)]
 
       (testing "Data passing the rule (<= 30) goes to the left child"
         (is (= "Young" (tree/predict dt-tree {:age 25 :income 50000})))
@@ -42,8 +40,8 @@
 (deftest test-tree-depth
   (testing "calculating the depth of a decision tree structure"
     (let [leaf       (tree/make-leaf "A")
-          node-1     (tree/make-node {:feature :x :threshold 1} leaf leaf)
-          root-node  (tree/make-node {:feature :y :threshold 2} node-1 leaf)]
+          node-1     (tree/make-continuous-split :x 1 leaf leaf)
+          root-node  (tree/make-continuous-split :y 2 node-1 leaf)]
       (is (= 0 (tree/tree-depth nil)))
       (is (= 1 (tree/tree-depth leaf)))
       (is (= 2 (tree/tree-depth node-1)))
@@ -53,12 +51,30 @@
   (testing "pretty-printing the decision tree structure to the console"
     (let [leaf-left  (tree/make-leaf "Young")
           leaf-right (tree/make-leaf "Old")
-          dt-tree    (tree/make-node {:feature :age, :threshold 30}
-                                     leaf-left
-                                     leaf-right)
+          dt-tree    (tree/make-continuous-split :age 30 leaf-left leaf-right)
           output     (with-out-str (tree/display dt-tree))
           lines      (str/split-lines output)]
       (is (= "Decision Tree:" (nth lines 0)))
       (is (= " Root:  Is :age <= 30 ?" (nth lines 1)))
       (is (= "   ├── True:   Predict -> Young" (nth lines 2)))
       (is (= "   └── False:  Predict -> Old" (nth lines 3))))))
+
+(deftest test-categorical-split
+  (testing "routing data using categorical split"
+    (let [leaf-red   (tree/make-leaf "Apple")
+          leaf-other (tree/make-leaf "Unknown")
+          dt-tree    (tree/make-categorical-split :color "red" leaf-red leaf-other)]
+      (is (= "Apple" (tree/predict dt-tree {:color "red"})))
+      (is (= "Unknown" (tree/predict dt-tree {:color "blue"})))
+      (is (= "Unknown" (tree/predict dt-tree {}))))))
+
+(deftest test-predict-edge-cases
+  (testing "predicting on nil tree returns nil"
+    (is (nil? (tree/predict nil {:age 25}))))
+
+  (testing "predicting when feature key is missing routes to right branch"
+    (let [leaf-left  (tree/make-leaf "Young")
+          leaf-right (tree/make-leaf "Unknown")
+          dt-tree    (tree/make-continuous-split :age 30 leaf-left leaf-right)]
+      (is (= "Unknown" (tree/predict dt-tree {:income 50000}))))))
+

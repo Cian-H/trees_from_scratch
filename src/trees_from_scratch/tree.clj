@@ -1,23 +1,45 @@
 (ns trees-from-scratch.tree)
 
 (defn make-leaf [prediction]
-  {:prediction prediction})
+  {:type       :leaf
+   :prediction prediction})
 
-(defn make-node [rule left right]
-  {:rule rule :left left :right right})
+(defn make-split [description predicate left right]
+  {:type        :split
+   :description description
+   :predicate   predicate
+   :left        left
+   :right       right})
 
-(defn tree-depth [{:keys [left right] :as tree}]
-  (if tree
-    (inc (max (tree-depth left) (tree-depth right)))
+(defn make-continuous-split [feature threshold left right]
+  (let [desc (str "Is " feature " <= " threshold " ?")
+        pred (fn [row]
+               (let [v (get row feature)]
+                 (and (some? v) (<= v threshold))))]
+    (make-split desc pred left right)))
+
+(defn make-categorical-split [feature category left right]
+  (let [desc (str "Is " feature " == " category " ?")
+        pred (fn [row] (= (get row feature) category))]
+    (make-split desc pred left right)))
+
+(defn predict [node data-row]
+  (loop [curr node]
+    (when curr
+      (case (:type curr)
+        :leaf  (:prediction curr)
+        :split (let [go-left?   ((:predicate curr) data-row)
+                     next-node (if go-left? (:left curr) (:right curr))]
+                 (recur next-node))
+        nil))))
+
+(defn tree-depth [node]
+  (if node
+    (case (:type node)
+      :leaf  1
+      :split (inc (max (tree-depth (:left node))
+                       (tree-depth (:right node)))))
     0))
-
-(defn predict [{:keys [prediction rule left right]} data-row]
-  (if prediction
-    prediction
-    (let [{:keys [feature threshold]} rule]
-      (if (<= (get data-row feature) threshold)
-        (recur left data-row)
-        (recur right data-row)))))
 
 (defn display
   "Pretty-prints the decision tree to the console."
@@ -25,11 +47,12 @@
    (println "Decision Tree:")
    (display tree 0 "Root: "))
 
-  ([{:keys [prediction rule left right]} depth branch-label]
-   (let [indent (apply str (repeat (* 2 depth) " "))] ; 2 spaces per depth level
-     (if prediction
-       (println indent branch-label "Predict ->" prediction)
-       (let [{:keys [feature threshold]} rule]
-         (println indent branch-label "Is" feature "<=" threshold "?")
-         (display left (inc depth) "├── True:  ")
-         (display right (inc depth) "└── False: "))))))
+  ([node depth branch-label]
+   (let [indent (apply str (repeat (* 2 depth) " "))]
+     (case (:type node)
+       :leaf  (println indent branch-label "Predict ->" (:prediction node))
+       :split (do
+                (println indent branch-label (:description node))
+                (display (:left node) (inc depth) "├── True:  ")
+                (display (:right node) (inc depth) "└── False: "))))))
+
