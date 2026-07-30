@@ -1,4 +1,4 @@
-(ns trees-from-scratch.tree)
+(ns trees-from-scratch.trees.binary)
 
 (defn make-leaf [prediction]
   {:type       :leaf
@@ -55,4 +55,3 @@
                 (println indent branch-label (:description node))
                 (display (:left node) (inc depth) "├── True:  ")
                 (display (:right node) (inc depth) "└── False: "))))))
-

@@ -5,13 +5,8 @@
                                              misclassification-rate
                                              mean-squared-deviation
                                              mean-absolute-deviation
-                                             poisson-deviance]]))
-
-(defn approx=
-  ([expected actual]
-   (approx= expected actual 1e-5))
-  ([expected actual tolerance]
-   (<= (Math/abs (- (double expected) (double actual))) tolerance)))
+                                             poisson-deviance]]
+            [trees-from-scratch.test-utils :refer [approx=]]))
 
 (deftest test-gini
   (testing "Perfect purity (one class)"
