@@ -1,8 +1,10 @@
 (ns trees-from-scratch.models.core
+  "Core model evaluation and prediction functions."
   (:require [trees-from-scratch.dataset :as ds]
             [trees-from-scratch.trees.binary :as binary-tree]))
 
 (defn majority-class
+  "Finds the most frequent class in a sequence of labels."
   [labels]
   (when (seq labels)
     (->> labels
@@ -11,6 +13,7 @@
          ffirst)))
 
 (defn mean-target
+  "Calculates the mean value of a sequence of continuous targets."
   [values]
   (when values
     (if (empty? values)
@@ -18,12 +21,14 @@
       (/ (apply + values) (count values)))))
 
 (defn predict-all
+  "Predicts the target for all rows in a dataset using the given tree."
   [tree dataset]
   (map (fn [idx]
          (binary-tree/predict tree (ds/get-row dataset idx)))
        (range (ds/row-count dataset))))
 
 (defn evaluate
+  "Evaluates a tree on a dataset against the specified metric (e.g., :accuracy, :mse)."
   ([tree dataset target-key]
    (evaluate tree dataset target-key :accuracy))
   ([tree dataset target-key metric]

@@ -1,4 +1,5 @@
-(ns trees-from-scratch.dataset)
+(ns trees-from-scratch.dataset
+  "Core dataset representation and manipulation functions.")
 
 (defn make-dataset
   "Constructs a composite dataset map containing :columns and :types."

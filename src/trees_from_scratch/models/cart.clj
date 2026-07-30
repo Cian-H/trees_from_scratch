@@ -1,4 +1,5 @@
 (ns trees-from-scratch.models.cart
+  "Implementation of the CART (Classification and Regression Trees) algorithm."
   (:require [trees-from-scratch.loss :as loss]
             [trees-from-scratch.dataset :as ds]
             [trees-from-scratch.trees.binary :as binary-tree]
@@ -6,6 +7,7 @@
             [trees-from-scratch.models.core :as core]))
 
 (defn loss-reduction
+  "Calculates the reduction in loss (e.g., information gain) achieved by a split."
   [parent-labels left-labels right-labels loss-fn]
   (let [n       (count parent-labels)
         n-left  (count left-labels)
@@ -18,7 +20,9 @@
            (+ (* weight-left  (loss-fn left-labels))
               (* weight-right (loss-fn right-labels))))))))
 
-(defn vector-splits-continuous [v labels]
+(defn vector-splits-continuous
+  "Finds all possible continuous split points (midpoints between distinct values) for a feature vector."
+  [v labels]
   (->> (map vector v labels)
        (sort-by first)
        (partition 2 1)
@@ -27,15 +31,21 @@
                  (/ (+ x y) 2))))
        distinct))
 
-(defn vector-splits-categorical [v]
+(defn vector-splits-categorical
+  "Finds all possible categorical split points (unique categories) for a feature vector."
+  [v]
   (distinct v))
 
-(defn vector-splits [v type labels]
+(defn vector-splits
+  "Dispatches to the appropriate split-finding function based on feature type."
+  [v type labels]
   (case type
     :continuous (vector-splits-continuous v labels)
     :categorical (vector-splits-categorical v)))
 
-(defmulti partition-labels (fn [type _v _labels _split-val] type))
+(defmulti partition-labels
+  "Partitions labels into left and right subsets based on a feature split."
+  (fn [type _v _labels _split-val] type))
 
 (defmethod partition-labels :continuous [_ v labels split-val]
   (reduce (fn [[l r] [val label]]
@@ -53,7 +63,9 @@
           [[] []]
           (map vector v labels)))
 
-(defn best-vector-split [dataset feat target-key loss-fn]
+(defn best-vector-split
+  "Finds the best split (maximizing loss reduction) for a single feature."
+  [dataset feat target-key loss-fn]
   (let [v (ds/get-column dataset feat)
         feat-type (ds/get-type dataset feat)
         parent-labels (ds/get-column dataset target-key)]
@@ -78,6 +90,7 @@
                :right right-ds)))))
 
 (defn best-split
+  "Finds the best split across all available features."
   ([dataset target-key]
    (best-split dataset target-key {}))
 
@@ -97,23 +110,30 @@
                       best))
                   nil)))))
 
-(defmulti default-loss-fn identity)
+(defmulti default-loss-fn
+  "Returns the default loss function for a given task type."
+  identity)
 (defmethod default-loss-fn :classification [_] loss/gini)
 (defmethod default-loss-fn :regression [_] loss/mean-squared-deviation)
 
-(defmulti make-leaf-node (fn [task-type _dataset _target-key] task-type))
+(defmulti make-leaf-node
+  "Creates a leaf node appropriate for the task type."
+  (fn [task-type _dataset _target-key] task-type))
 (defmethod make-leaf-node :classification [_ dataset target-key]
   (binary-tree/make-leaf (core/majority-class (ds/get-column dataset target-key))))
 (defmethod make-leaf-node :regression [_ dataset target-key]
   (binary-tree/make-leaf (core/mean-target (ds/get-column dataset target-key))))
 
-(defmulti make-split-node (fn [type _feature _split-val _left _right] type))
+(defmulti make-split-node
+  "Creates a split node appropriate for the feature type."
+  (fn [type _feature _split-val _left _right] type))
 (defmethod make-split-node :continuous [_ feature split-val left right]
   (binary-tree/make-continuous-split feature split-val left right))
 (defmethod make-split-node :categorical [_ feature split-val left right]
   (binary-tree/make-categorical-split feature split-val left right))
 
 (defn train
+  "Trains a CART decision tree on the given dataset."
   ([dataset target-key]
    (train dataset target-key {}))
 

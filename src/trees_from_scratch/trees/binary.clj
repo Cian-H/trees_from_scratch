@@ -1,29 +1,40 @@
-(ns trees-from-scratch.trees.binary)
+(ns trees-from-scratch.trees.binary
+  "Binary decision tree representation and evaluation.")
 
-(defn make-leaf [prediction]
+(defn make-leaf
+  "Creates a leaf node for a decision tree, containing the final prediction."
+  [prediction]
   {:type       :leaf
    :prediction prediction})
 
-(defn make-split [description predicate left right]
+(defn make-split
+  "Creates a generic split (decision) node, dispatching data based on a predicate."
+  [description predicate left right]
   {:type        :split
    :description description
    :predicate   predicate
    :left        left
    :right       right})
 
-(defn make-continuous-split [feature threshold left right]
+(defn make-continuous-split
+  "Creates a continuous split node that evaluates whether a feature is <= threshold."
+  [feature threshold left right]
   (let [desc (str "Is " feature " <= " threshold " ?")
         pred (fn [row]
                (let [v (get row feature)]
                  (and (some? v) (<= v threshold))))]
     (make-split desc pred left right)))
 
-(defn make-categorical-split [feature category left right]
+(defn make-categorical-split
+  "Creates a categorical split node that evaluates whether a feature == category."
+  [feature category left right]
   (let [desc (str "Is " feature " == " category " ?")
         pred (fn [row] (= (get row feature) category))]
     (make-split desc pred left right)))
 
-(defn predict [node data-row]
+(defn predict
+  "Traverses the tree to make a prediction for a single data row."
+  [node data-row]
   (loop [curr node]
     (when curr
       (case (:type curr)
@@ -33,7 +44,9 @@
                  (recur next-node))
         nil))))
 
-(defn tree-depth [node]
+(defn tree-depth
+  "Calculates the maximum depth of the given tree node (leaves have depth 1)."
+  [node]
   (if node
     (case (:type node)
       :leaf  1
