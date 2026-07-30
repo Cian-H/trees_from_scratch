@@ -32,7 +32,7 @@
      (if (empty? actuals)
        0.0
        (case metric
-         :accuracy (let [correct (filter true? (map = predictions actuals))]
-                     (/ (double (count correct)) (count actuals)))
+         :accuracy (let [correct (reduce + 0 (map #(if (= %1 %2) 1 0) predictions actuals))]
+                     (/ (double correct) (count actuals)))
          :mse      (let [errors (map (fn [p a] (let [d (- p a)] (* d d))) predictions actuals)]
-                     (/ (apply + errors) (count actuals))))))))
+                     (/ (reduce + 0.0 errors) (count actuals))))))))

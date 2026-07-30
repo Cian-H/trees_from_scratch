@@ -10,7 +10,8 @@
         labels (ds/get-column dataset target-key)]
     (or (>= depth max-depth)
         (< (ds/row-count dataset) min-samples-split)
-        (<= (count (set labels)) 1))))
+        (let [first-lbl (first labels)]
+          (every? #(= first-lbl %) labels)))))
 
 (defn cart-late-exit?
   [options split-record]

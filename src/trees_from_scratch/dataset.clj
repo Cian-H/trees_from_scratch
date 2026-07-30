@@ -33,8 +33,10 @@
 (defn get-row
   "Extracts the i-th row from the dataset as a single map {:col1 val1 :col2 val2 ...}."
   [dataset idx]
-  (into {} (for [[k v] (:columns dataset)]
-             [k (nth v idx)])))
+  (reduce-kv (fn [m k v]
+               (assoc m k (nth v idx)))
+             {}
+             (:columns dataset)))
 
 (defn select-rows
   "Returns a new composite dataset containing only the specified `indices`.
@@ -49,8 +51,13 @@
    Left dataset contains rows where val <= threshold. Right dataset contains rows where val > threshold."
   [dataset col-key threshold]
   (let [col (get-column dataset col-key)
-        indices-left (keep-indexed #(when (<= %2 threshold) %1) col)
-        indices-right (keep-indexed #(when (> %2 threshold) %1) col)]
+        [indices-left indices-right]
+        (reduce-kv (fn [[l r] idx val]
+                     (if (<= val threshold)
+                       [(conj l idx) r]
+                       [l (conj r idx)]))
+                   [[] []]
+                   col)]
     [(select-rows dataset indices-left)
      (select-rows dataset indices-right)]))
 
@@ -59,7 +66,12 @@
    Left dataset contains rows where val == category. Right dataset contains rows where val != category."
   [dataset col-key category]
   (let [col (get-column dataset col-key)
-        indices-left (keep-indexed #(when (= %2 category) %1) col)
-        indices-right (keep-indexed #(when (not= %2 category) %1) col)]
+        [indices-left indices-right]
+        (reduce-kv (fn [[l r] idx val]
+                     (if (= val category)
+                       [(conj l idx) r]
+                       [l (conj r idx)]))
+                   [[] []]
+                   col)]
     [(select-rows dataset indices-left)
      (select-rows dataset indices-right)]))

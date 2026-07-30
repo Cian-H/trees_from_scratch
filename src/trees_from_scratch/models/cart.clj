@@ -35,28 +35,47 @@
     :continuous (vector-splits-continuous v labels)
     :categorical (vector-splits-categorical v)))
 
+(defmulti partition-labels (fn [type _v _labels _split-val] type))
+
+(defmethod partition-labels :continuous [_ v labels split-val]
+  (reduce (fn [[l r] [val label]]
+            (if (<= val split-val)
+              [(conj l label) r]
+              [l (conj r label)]))
+          [[] []]
+          (map vector v labels)))
+
+(defmethod partition-labels :categorical [_ v labels split-val]
+  (reduce (fn [[l r] [val label]]
+            (if (= val split-val)
+              [(conj l label) r]
+              [l (conj r label)]))
+          [[] []]
+          (map vector v labels)))
+
 (defn best-vector-split [dataset feat target-key loss-fn]
   (let [v (ds/get-column dataset feat)
         feat-type (ds/get-type dataset feat)
         parent-labels (ds/get-column dataset target-key)]
-    (->> (vector-splits v feat-type parent-labels)
-         (map (fn [split-val]
-                (let [[left-ds right-ds] (if (= feat-type :continuous)
-                                           (ds/split-by-continuous dataset feat split-val)
-                                           (ds/split-by-categorical dataset feat split-val))
-                      left-labels  (ds/get-column left-ds target-key)
-                      right-labels (ds/get-column right-ds target-key)]
-                  {:type feat-type
-                   :split-val split-val
-                   :loss-reduction (loss-reduction parent-labels left-labels right-labels loss-fn)
-                   :left left-ds
-                   :right right-ds})))
-         (reduce (fn [best current]
-                   (if (and (> (:loss-reduction current) 0.0)
-                            (or (nil? best) (> (:loss-reduction current) (:loss-reduction best))))
-                     current
-                     best))
-                 nil))))
+    (when-let [best-split-val
+               (->> (vector-splits v feat-type parent-labels)
+                    (map (fn [split-val]
+                           (let [[left-labels right-labels] (partition-labels feat-type v parent-labels split-val)]
+                             {:split-val split-val
+                              :loss-reduction (loss-reduction parent-labels left-labels right-labels loss-fn)})))
+                    (reduce (fn [best current]
+                              (if (and (> (:loss-reduction current) 0.0)
+                                       (or (nil? best) (> (:loss-reduction current) (:loss-reduction best))))
+                                current
+                                best))
+                            nil))]
+      (let [[left-ds right-ds] (if (= feat-type :continuous)
+                                 (ds/split-by-continuous dataset feat (:split-val best-split-val))
+                                 (ds/split-by-categorical dataset feat (:split-val best-split-val)))]
+        (assoc best-split-val
+               :type feat-type
+               :left left-ds
+               :right right-ds)))))
 
 (defn best-split
   ([dataset target-key]
