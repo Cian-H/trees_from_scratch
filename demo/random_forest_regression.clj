@@ -29,7 +29,7 @@
 
 (println "\n--- Random Forest ---")
 (println "Fitting Random Forest (Regression)...")
-(def rf-model (rf/train train-dataset target {:task-type :regression :max-trees 15}))
+(def rf-model (rf/train train-dataset target {:task-type :regression :max-trees 50 :window-size 50}))
 (def rf-train-r2 (models.core/evaluate rf-model train-dataset target :r2))
 (def rf-test-r2 (models.core/evaluate rf-model test-dataset target :r2))
 (println (format "RF Training R^2: %.4f" rf-train-r2))

@@ -145,8 +145,10 @@
    (let [{:keys [early-exit late-exit]} stop
          loss-fn     (or loss-fn (default-loss-fn task-type))
          features    (or features (remove #{target-key} (ds/column-names dataset)))
+         m           (:max-features opt)
+         sampled-features (if m (vec (take m (shuffle features))) features)
          early?      (early-exit opt dataset target-key)
-         new-split   (when-not early? (best-split dataset target-key {:features features :loss-fn loss-fn}))
+         new-split   (when-not early? (best-split dataset target-key {:features sampled-features :loss-fn loss-fn}))
          late?       (and new-split (late-exit opt new-split target-key))]
      (if (or early? late? (nil? new-split))
        (make-leaf-node task-type dataset target-key)

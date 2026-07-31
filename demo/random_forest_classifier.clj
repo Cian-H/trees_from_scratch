@@ -29,7 +29,7 @@
 
 (println "\n--- Random Forest ---")
 (println "Fitting Random Forest...")
-(def rf-model (rf/train train-dataset target {:task-type :classification :max-trees 15}))
+(def rf-model (rf/train train-dataset target {:task-type :classification :max-trees 50 :window-size 50}))
 (def rf-train-acc (models.core/evaluate rf-model train-dataset target :accuracy))
 (def rf-test-acc (models.core/evaluate rf-model test-dataset target :accuracy))
 (println (format "RF Training Accuracy: %.2f%%" (* 100.0 rf-train-acc)))

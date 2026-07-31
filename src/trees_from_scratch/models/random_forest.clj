@@ -48,7 +48,7 @@
   ([dataset target-key]
    (train dataset target-key {}))
 
-  ([dataset target-key {:keys [task-type features window-size min-delta max-trees]
+  ([dataset target-key {:keys [task-type features window-size min-delta max-trees max-features]
                         :or {window-size 10, min-delta 0.01, max-trees 100}
                         :as opt}]
    (let [features      (or features (remove #{target-key} (ds/column-names dataset)))
@@ -56,7 +56,7 @@
          raw-m         (case task-type
                          :classification (Math/sqrt p)
                          :regression (/ p 3.0))
-         m             (min p (max (int raw-m) 2))
+         m             (or max-features (min p (max (int raw-m) 2)))
          target-vector (target-key dataset)]
 
      (loop [forest        []
@@ -74,11 +74,10 @@
                         :regression     core/mean-target)]
            (apply ensemble/make agg-fn forest))
          (let [{:keys [train-ds oob-ds oob-idx]} (bootstrap-with-oob dataset)
-               feature-subset (get-random-features m features)
                tree            (cart/train
                                 train-ds
                                 target-key
-                                (assoc opt :features feature-subset))
+                                (assoc opt :max-features m))
                oob-preds       (core/predict-all tree oob-ds)
                new-pmatrix     (update-pred-matrix pmatrix oob-preds oob-idx)
                new-error       (calculate-forest-error new-pmatrix target-vector opt)]
