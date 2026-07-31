@@ -22,15 +22,17 @@
       (is (true? (stopping/cart-early-exit? {:depth 0} pure-data :label))))))
 
 (deftest test-cart-late-exit?
-  (testing "returns true if loss reduction is less than or equal to min-loss-reduction"
-    (let [split-record {:feature :x :loss-reduction 0.05}
-          options      {:min-loss-reduction 0.1}]
-      (is (true? (stopping/cart-late-exit? options split-record))))
-    (let [split-record {:feature :x :loss-reduction 0.1}
-          options      {:min-loss-reduction 0.1}]
-      (is (true? (stopping/cart-late-exit? options split-record)))))
+  (let [dummy-split {:left {:columns {:label ["A"]}}
+                     :right {:columns {:label ["B"]}}}]
+    (testing "returns true if loss reduction is less than or equal to min-loss-reduction"
+      (let [split-record (assoc dummy-split :feature :x :loss-reduction 0.05)
+            options      {:min-loss-reduction 0.1}]
+        (is (true? (stopping/cart-late-exit? options split-record :label))))
+      (let [split-record (assoc dummy-split :feature :x :loss-reduction 0.1)
+            options      {:min-loss-reduction 0.1}]
+        (is (true? (stopping/cart-late-exit? options split-record :label)))))
 
-  (testing "returns false if loss reduction is greater than min-loss-reduction"
-    (let [split-record {:feature :x :loss-reduction 0.15}
-          options      {:min-loss-reduction 0.1}]
-      (is (false? (stopping/cart-late-exit? options split-record))))))
+    (testing "returns false if loss reduction is greater than min-loss-reduction"
+      (let [split-record (assoc dummy-split :feature :x :loss-reduction 0.15)
+            options      {:min-loss-reduction 0.1}]
+        (is (false? (stopping/cart-late-exit? options split-record :label)))))))

@@ -40,4 +40,10 @@
          :accuracy (let [correct (reduce + 0 (map #(if (= %1 %2) 1 0) predictions actuals))]
                      (/ (double correct) (count actuals)))
          :mse      (let [errors (map (fn [p a] (let [d (- p a)] (* d d))) predictions actuals)]
-                     (/ (reduce + 0.0 errors) (count actuals))))))))
+                     (/ (reduce + 0.0 errors) (count actuals)))
+         :r2       (let [mean-actual (mean-target actuals)
+                         sst         (reduce + 0.0 (map (fn [a] (let [d (- a mean-actual)] (* d d))) actuals))
+                         sse         (reduce + 0.0 (map (fn [p a] (let [d (- p a)] (* d d))) predictions actuals))]
+                     (if (zero? sst)
+                       0.0
+                       (- 1.0 (/ sse sst)))))))))
