@@ -1,5 +1,8 @@
 (ns trees-from-scratch.dataset
-  "Core dataset representation and manipulation functions.")
+  "Core dataset representation and manipulation functions."
+  (:require [tablecloth.api :as tc]
+            [tech.v3.dataset.sql :as sql]
+            [clojure.string :as str]))
 
 (defn make-dataset
   "Constructs a composite dataset map containing :columns and :types."
@@ -76,3 +79,70 @@
                    col)]
     [(select-rows dataset indices-left)
      (select-rows dataset indices-right)]))
+
+(defn from-tablecloth
+  "Converts a tech.ml.dataset into a trees-from-scratch.dataset."
+  [ds]
+  (reduce (fn [acc col-name]
+            (assoc acc (keyword col-name) (vec (ds col-name))))
+          {}
+          (tc/column-names ds)))
+
+(defn from-csv
+  "Reads a CSV using Tablecloth's robust parser, then converts it to trees-from-scratch.dataset."
+  [filepath]
+  (-> filepath
+      (tc/dataset)
+      (from-tablecloth)))
+
+(defn from-parquet
+  "Reads a Parquet file and converts it to trees-from-scratch.dataset."
+  [filepath]
+  (-> filepath tc/dataset from-tablecloth))
+
+(defn from-json
+  "Reads a JSON file containing an array of objects."
+  [filepath]
+  (-> filepath tc/dataset from-tablecloth))
+
+(defn from-sql
+  "Executes a SQL query and loads the result set."
+  [db-spec query]
+  (-> (sql/sql->dataset db-spec query)
+      from-tablecloth))
+
+(defn to-tablecloth
+  "Converts a trees-from-scratch.dataset into a Tablecloth dataset."
+  [custom-ds]
+  (tc/dataset custom-ds))
+
+(defn- validate-extension!
+  "Throws an exception if the filepath does not end with the given extension."
+  [filepath ext]
+  (when-not (str/ends-with? filepath ext)
+    (throw (IllegalArgumentException. (str "Filepath must end with " ext)))))
+
+(defn to-file
+  "Writes a trees-from-scratch.dataset to a file, inferring the format from the file extension."
+  [custom-ds filepath]
+  (-> custom-ds
+      (to-tablecloth)
+      (tc/write! filepath)))
+
+(defn to-csv
+  "Writes a trees-from-scratch.dataset to a CSV file. Validates that the filepath ends with .csv"
+  [custom-ds filepath]
+  (validate-extension! filepath ".csv")
+  (to-file custom-ds filepath))
+
+(defn to-json
+  "Writes our custom dataset to a JSON file. Validates that the filepath ends with .json"
+  [custom-ds filepath]
+  (validate-extension! filepath ".json")
+  (to-file custom-ds filepath))
+
+(defn to-parquet
+  "Writes a trees-from-scratch.dataset to a Parquet file. Validates that the filepath ends with .parquet"
+  [custom-ds filepath]
+  (validate-extension! filepath ".parquet")
+  (to-file custom-ds filepath))

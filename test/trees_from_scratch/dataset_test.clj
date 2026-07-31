@@ -1,6 +1,8 @@
 (ns trees-from-scratch.dataset-test
   (:require [clojure.test :refer [deftest is testing]]
-            [trees-from-scratch.dataset :as ds]))
+            [trees-from-scratch.test-utils :refer [with-temp-file]]
+            [trees-from-scratch.dataset :as ds]
+            [tech.v3.dataset.sql :as sql]))
 
 (def classification-dataset
   {:columns {:age    [15 22 35 45 50]
@@ -66,3 +68,38 @@
       (is (every? #(not= % "sunny") (ds/get-column right :outlook)))
       ;; Metadata preserved
       (is (= :categorical (ds/get-type right :outlook))))))
+
+(deftest round-trip-io-test
+  (let [original-data {:age [25 30 42]
+                       :income [50000 65000 120000]
+                       :target [0 1 1]}]
+
+    (testing "CSV Round-Trip"
+      (with-temp-file [filepath ["test-data" ".csv"]]
+        (ds/to-csv original-data filepath)
+        (let [read-data (ds/from-csv filepath)]
+          (is (= original-data read-data)))))
+
+    (testing "JSON Round-Trip"
+      (with-temp-file [filepath ["test-data" ".json"]]
+        (ds/to-json original-data filepath)
+        (let [read-data (ds/from-json filepath)]
+          (is (= original-data read-data)))))
+
+    (testing "Parquet Round-Trip"
+      (with-temp-file [filepath ["test-data" ".parquet"]]
+        (ds/to-parquet original-data filepath)
+        (let [read-data (ds/from-parquet filepath)]
+          (is (= original-data read-data)))))
+
+    (testing "SQL Round-Trip (SQLite)"
+      (with-temp-file [filepath ["test-data" ".sqlite"]]
+        (let [jdbc-url (str "jdbc:sqlite:" filepath)
+              table-name "test_data"
+              tc-ds (ds/to-tablecloth original-data)]
+          (with-open [conn (java.sql.DriverManager/getConnection jdbc-url)]
+            (sql/create-table! conn tc-ds {:table-name table-name})
+            (sql/insert-dataset! conn tc-ds {:table-name table-name})
+            (let [query "SELECT * FROM test_data"
+                  read-data (ds/from-sql conn query)]
+              (is (= original-data read-data)))))))))
