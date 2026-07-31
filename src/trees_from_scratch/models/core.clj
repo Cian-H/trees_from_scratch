@@ -1,7 +1,7 @@
 (ns trees-from-scratch.models.core
   "Core model evaluation and prediction functions."
   (:require [trees-from-scratch.dataset :as ds]
-            [trees-from-scratch.trees.binary :as binary-tree]))
+            [trees-from-scratch.trees.core :as tree-core]))
 
 (defn majority-class
   "Finds the most frequent class in a sequence of labels."
@@ -24,7 +24,7 @@
   "Predicts the target for all rows in a dataset using the given tree."
   [tree dataset]
   (map (fn [idx]
-         (binary-tree/predict tree (ds/get-row dataset idx)))
+         (tree-core/predict tree (ds/get-row dataset idx)))
        (range (ds/row-count dataset))))
 
 (defn evaluate

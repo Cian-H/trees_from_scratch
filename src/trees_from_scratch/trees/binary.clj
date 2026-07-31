@@ -1,20 +1,47 @@
 (ns trees-from-scratch.trees.binary
-  "Binary decision tree representation and evaluation.")
+  "Binary decision tree representation and evaluation."
+  (:require [trees-from-scratch.trees.core :as tree-core]))
+
+(defrecord BinaryLeaf [prediction]
+  tree-core/Tree
+  (predict [_ _] prediction)
+  (tree-depth [_] 1)
+  (display-tree [this]
+    (println "Decision Tree:")
+    (tree-core/display-tree this 0 "Root: "))
+  (display-tree [_ depth branch-label]
+    (let [indent (apply str (repeat (* 2 depth) " "))]
+      (println indent branch-label "Predict ->" prediction))))
 
 (defn make-leaf
   "Creates a leaf node for a decision tree, containing the final prediction."
   [prediction]
-  {:type       :leaf
-   :prediction prediction})
+  (->BinaryLeaf prediction))
+
+(defrecord BinarySplit [description predicate left right]
+  tree-core/Tree
+  (predict [_ data-row]
+    (let [go-left? (predicate data-row)
+          next-node (if go-left? left right)]
+      (if next-node
+        (tree-core/predict next-node data-row)
+        nil)))
+  (tree-depth [_]
+    (inc (max (if left (tree-core/tree-depth left) 0)
+              (if right (tree-core/tree-depth right) 0))))
+  (display-tree [this]
+    (println "Decision Tree:")
+    (tree-core/display-tree this 0 "Root: "))
+  (display-tree [_ depth branch-label]
+    (let [indent (apply str (repeat (* 2 depth) " "))]
+      (println indent branch-label description)
+      (when left (tree-core/display-tree left (inc depth) "├── True:  "))
+      (when right (tree-core/display-tree right (inc depth) "└── False: ")))))
 
 (defn make-split
   "Creates a generic split (decision) node, dispatching data based on a predicate."
   [description predicate left right]
-  {:type        :split
-   :description description
-   :predicate   predicate
-   :left        left
-   :right       right})
+  (->BinarySplit description predicate left right))
 
 (defn make-continuous-split
   "Creates a continuous split node that evaluates whether a feature is <= threshold."
@@ -31,40 +58,3 @@
   (let [desc (str "Is " feature " == " category " ?")
         pred (fn [row] (= (get row feature) category))]
     (make-split desc pred left right)))
-
-(defn predict
-  "Traverses the tree to make a prediction for a single data row."
-  [node data-row]
-  (loop [curr node]
-    (when curr
-      (case (:type curr)
-        :leaf  (:prediction curr)
-        :split (let [go-left?   ((:predicate curr) data-row)
-                     next-node (if go-left? (:left curr) (:right curr))]
-                 (recur next-node))
-        nil))))
-
-(defn tree-depth
-  "Calculates the maximum depth of the given tree node (leaves have depth 1)."
-  [node]
-  (if node
-    (case (:type node)
-      :leaf  1
-      :split (inc (max (tree-depth (:left node))
-                       (tree-depth (:right node)))))
-    0))
-
-(defn display
-  "Pretty-prints the decision tree to the console."
-  ([tree]
-   (println "Decision Tree:")
-   (display tree 0 "Root: "))
-
-  ([node depth branch-label]
-   (let [indent (apply str (repeat (* 2 depth) " "))]
-     (case (:type node)
-       :leaf  (println indent branch-label "Predict ->" (:prediction node))
-       :split (do
-                (println indent branch-label (:description node))
-                (display (:left node) (inc depth) "├── True:  ")
-                (display (:right node) (inc depth) "└── False: "))))))

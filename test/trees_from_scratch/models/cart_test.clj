@@ -3,7 +3,7 @@
             [trees-from-scratch.loss :as loss]
             [trees-from-scratch.dataset :as ds]
             [trees-from-scratch.models.cart :as cart]
-            [trees-from-scratch.trees.binary :as binary-tree]
+            [trees-from-scratch.trees.core :as tree-core]
             [trees-from-scratch.models.core :as core]
             [trees-from-scratch.test-utils :refer [approx=]]))
 
@@ -81,12 +81,12 @@
     (let [dt-model (cart/train classification-dataset :label {:max-depth 3})]
       (is (map? dt-model))
       ;; Check root node is a split
-      (is (= :split (:type dt-model)))
+      (is (instance? trees_from_scratch.trees.binary.BinarySplit dt-model))
       ;; Verify predictions on single row maps
-      (is (= "No"  (binary-tree/predict dt-model {:age 15 :income 20})))
-      (is (= "No"  (binary-tree/predict dt-model {:age 22 :income 25})))
-      (is (= "Yes" (binary-tree/predict dt-model {:age 35 :income 70})))
-      (is (= "Yes" (binary-tree/predict dt-model {:age 50 :income 85}))))))
+      (is (= "No"  (tree-core/predict dt-model {:age 15 :income 20})))
+      (is (= "No"  (tree-core/predict dt-model {:age 22 :income 25})))
+      (is (= "Yes" (tree-core/predict dt-model {:age 35 :income 70})))
+      (is (= "Yes" (tree-core/predict dt-model {:age 50 :income 85}))))))
 
 (deftest test-train-regression
   (testing "training a regression tree on continuous target data"
@@ -94,8 +94,8 @@
                                                            :loss-fn loss/mean-squared-deviation
                                                            :max-depth 3})]
       (is (map? dt-model))
-      (let [pred1 (binary-tree/predict dt-model {:experience 1 :education "BSc"})
-            pred2 (binary-tree/predict dt-model {:experience 9 :education "PhD"})]
+      (let [pred1 (tree-core/predict dt-model {:experience 1 :education "BSc"})
+            pred2 (tree-core/predict dt-model {:experience 9 :education "PhD"})]
         (is (number? pred1))
         (is (number? pred2))
         ;; Low experience should yield lower salary prediction than high experience
@@ -104,7 +104,7 @@
 (deftest test-train-with-depth-limit
   (testing "max-depth parameter constrains tree height"
     (let [shallow-tree (cart/train categorical-dataset :play {:max-depth 1})]
-      (is (<= (binary-tree/tree-depth shallow-tree) 2)))))
+      (is (<= (tree-core/tree-depth shallow-tree) 2)))))
 
 (deftest test-predict-all
   (testing "predict-all returns vector of predictions"

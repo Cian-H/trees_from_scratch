@@ -2,7 +2,7 @@
   (:require [trees-from-scratch.dataset :as ds]
             [trees-from-scratch.models.cart :as cart]
             [trees-from-scratch.models.core :as models.core]
-            [trees-from-scratch.trees.binary :as btree]
+            [trees-from-scratch.trees.core :as tree-core]
             [utils]))
 
 (def dataset (utils/fetch-iris))
@@ -28,4 +28,4 @@
 (println "Evaluating fit on testing data...")
 (def test-accuracy (models.core/evaluate tree test-dataset target :accuracy))
 (println (format "Testing Accuracy: %.2f%%" (* 100.0 test-accuracy)))
-(btree/display tree)
+(tree-core/display-tree tree)
