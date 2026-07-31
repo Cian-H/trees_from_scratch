@@ -147,7 +147,7 @@
          features    (or features (remove #{target-key} (ds/column-names dataset)))
          early?      (early-exit opt dataset target-key)
          new-split   (when-not early? (best-split dataset target-key {:features features :loss-fn loss-fn}))
-         late?       (and new-split (late-exit opt new-split))]
+         late?       (and new-split (late-exit opt new-split target-key))]
      (if (or early? late? (nil? new-split))
        (make-leaf-node task-type dataset target-key)
        (let [{:keys [feature split-val left right type]} new-split
