@@ -16,7 +16,8 @@
     (tree-core/display-tree this 0 "Root: "))
   (display-tree [_ depth branch-label]
     (let [indent (apply str (repeat (* 2 depth) " "))]
-      (println indent branch-label "Ensemble of" (count trees) "trees"))))
+      (println indent branch-label "Ensemble of" (count trees) "trees")))
+  (get-trees [_] trees))
 
 (defn make [agg & trees]
   (->Ensemble agg trees))

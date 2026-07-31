@@ -29,6 +29,23 @@
   [dataset col-key]
   (get-in dataset [:columns col-key]))
 
+(defn select-columns
+  "Returns a new dataset containing only the specified columns, preserving type metadata."
+  [dataset col-keys]
+  {:columns (select-keys (:columns dataset) col-keys)
+   :types   (select-keys (:types dataset) col-keys)})
+
+(defn map-columns
+  "Applies a function `f` to each column vector in the dataset.
+   `f` should take a column vector and return a new column vector of the same size.
+   Returns a new dataset with the transformed columns and preserved types."
+  [dataset f]
+  (assoc dataset :columns
+         (reduce-kv (fn [m k v]
+                      (assoc m k (f v)))
+                    {}
+                    (:columns dataset))))
+
 (defn get-type
   "Retrieves the type metadata (:continuous or :categorical) for a column."
   [dataset col-key]

@@ -11,7 +11,8 @@
     (tree-core/display-tree this 0 "Root: "))
   (display-tree [_ depth branch-label]
     (let [indent (apply str (repeat (* 2 depth) " "))]
-      (println indent branch-label "Predict ->" prediction))))
+      (println indent branch-label "Predict ->" prediction)))
+  (get-trees [this] [this]))
 
 (defn make-leaf
   "Creates a leaf node for a decision tree, containing the final prediction."
@@ -36,7 +37,8 @@
     (let [indent (apply str (repeat (* 2 depth) " "))]
       (println indent branch-label description)
       (when left (tree-core/display-tree left (inc depth) "├── True:  "))
-      (when right (tree-core/display-tree right (inc depth) "└── False: ")))))
+      (when right (tree-core/display-tree right (inc depth) "└── False: "))))
+  (get-trees [this] [this]))
 
 (defn make-split
   "Creates a generic split (decision) node, dispatching data based on a predicate."

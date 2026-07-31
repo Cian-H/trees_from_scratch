@@ -7,7 +7,8 @@
   (display-tree
     [this]
     [this depth branch-label]
-    "Pretty-prints the tree to the console."))
+    "Pretty-prints the tree to the console.")
+  (get-trees [this] "Returns all trees that comprise the model"))
 
 (extend-protocol Tree
   nil
@@ -15,4 +16,5 @@
   (tree-depth [_] 0)
   (display-tree
     ([_])
-    ([_ _ _])))
+    ([_ _ _]))
+  (get-trees [_]))

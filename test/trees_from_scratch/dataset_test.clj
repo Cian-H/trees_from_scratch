@@ -48,7 +48,23 @@
     (let [subset (ds/select-rows classification-dataset [0 2])]
       (is (= {:age [15 35] :income [20 70] :label ["No" "Yes"]} (:columns subset)))
       (is (= 2 (ds/row-count subset)))
-      (is (= (:types classification-dataset) (:types subset))))))
+      (is (= (:types classification-dataset) (:types subset)))))
+
+  (testing "selecting subset of columns preserves structure and types"
+    (let [subset (ds/select-columns classification-dataset [:age :label])]
+      (is (= #{:age :label} (set (ds/column-names subset))))
+      (is (= {:age :continuous :label :categorical} (:types subset)))
+      (is (= [15 22 35 45 50] (ds/get-column subset :age)))
+      (is (= ["No" "No" "Yes" "Yes" "Yes"] (ds/get-column subset :label)))))
+
+  (testing "mapping a function over all columns"
+    (let [mapped (ds/map-columns classification-dataset (fn [col] (mapv str col)))]
+      (is (= ["15" "22" "35" "45" "50"] (ds/get-column mapped :age)))
+      (is (= ["20" "25" "70" "90" "85"] (ds/get-column mapped :income)))
+      ;; the function maps over all columns, even target variables
+      (is (= ["No" "No" "Yes" "Yes" "Yes"] (ds/get-column mapped :label)))
+      ;; types are preserved structurally
+      (is (= (:types classification-dataset) (:types mapped))))))
 
 (deftest test-split-dataset
   (testing "splitting dataset with continuous feature"

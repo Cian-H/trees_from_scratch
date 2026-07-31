@@ -2,7 +2,7 @@
   "Implementation of the CART (Classification and Regression Trees) algorithm."
   (:require [trees-from-scratch.loss :as loss]
             [trees-from-scratch.dataset :as ds]
-            [trees-from-scratch.trees.binary :as binary-tree]
+            [trees-from-scratch.trees.binary :as btree]
             [trees-from-scratch.stopping :as stopping]
             [trees-from-scratch.models.core :as core]))
 
@@ -120,17 +120,17 @@
   "Creates a leaf node appropriate for the task type."
   (fn [task-type _dataset _target-key] task-type))
 (defmethod make-leaf-node :classification [_ dataset target-key]
-  (binary-tree/make-leaf (core/majority-class (ds/get-column dataset target-key))))
+  (btree/make-leaf (core/majority-class (ds/get-column dataset target-key))))
 (defmethod make-leaf-node :regression [_ dataset target-key]
-  (binary-tree/make-leaf (core/mean-target (ds/get-column dataset target-key))))
+  (btree/make-leaf (core/mean-target (ds/get-column dataset target-key))))
 
 (defmulti make-split-node
   "Creates a split node appropriate for the feature type."
   (fn [type _feature _split-val _left _right] type))
 (defmethod make-split-node :continuous [_ feature split-val left right]
-  (binary-tree/make-continuous-split feature split-val left right))
+  (btree/make-continuous-split feature split-val left right))
 (defmethod make-split-node :categorical [_ feature split-val left right]
-  (binary-tree/make-categorical-split feature split-val left right))
+  (btree/make-categorical-split feature split-val left right))
 
 (defn train
   "Trains a CART decision tree on the given dataset."
@@ -143,7 +143,7 @@
                                depth     0}
                         :as   opt}]
    (let [{:keys [early-exit late-exit]} stop
-         loss-fn (or loss-fn (default-loss-fn task-type))
+         loss-fn     (or loss-fn (default-loss-fn task-type))
          features    (or features (remove #{target-key} (ds/column-names dataset)))
          early?      (early-exit opt dataset target-key)
          new-split   (when-not early? (best-split dataset target-key {:features features :loss-fn loss-fn}))
