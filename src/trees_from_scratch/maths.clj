@@ -34,3 +34,16 @@
           (/ (+ (nth sorted (dec half))
                 (nth sorted half))
              2.0))))))
+
+(defn matrix-sub [x y]
+  (cond
+    (and (number? x) (number? y)) (- x y)
+
+    (and (coll? x) (coll? y))
+    (if (= (count x) (count y))
+      (map matrix-sub x y)
+      (throw (ex-info "Collections must have same dimensions"
+                      {:reason :dimension-mismatch :inputs [(count x) (count y)]})))
+
+    :else (throw (ex-info "Arguments must both be collections or both be numbers"
+                          {:reason :type-mismatch :inputs [x y]}))))

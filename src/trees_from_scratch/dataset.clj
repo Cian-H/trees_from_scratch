@@ -2,7 +2,8 @@
   "Core dataset representation and manipulation functions."
   (:require [tablecloth.api :as tc]
             [tech.v3.dataset.sql :as sql]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.set :as set]))
 
 (defn make-dataset
   "Constructs a composite dataset map containing :columns and :types."
@@ -62,6 +63,26 @@
           (update :columns #(apply dissoc % keys-to-drop))
           (update :types #(apply dissoc % keys-to-drop)))
       (apply dissoc dataset keys-to-drop))))
+
+(defn rename-columns
+  "Renames columns in the dataset using a map of old-key -> new-key.
+   Updates both :columns and :types metadata maps."
+  [dataset rename-map]
+  (if (and (map? dataset) (contains? dataset :columns))
+    (-> dataset
+        (update :columns set/rename-keys rename-map)
+        (update :types set/rename-keys rename-map))
+    (set/rename-keys dataset rename-map)))
+
+(defn replace-column
+  "Replaces an existing column in the dataset with a new vector.
+   Optionally accepts a `col-type` (:continuous or :categorical). If omitted, infers type."
+  ([dataset col-key col-vec]
+   (replace-column dataset col-key col-vec nil))
+  ([dataset col-key col-vec col-type]
+   (-> dataset
+       (drop-column col-key)
+       (add-column col-key col-vec col-type))))
 
 (defn map-columns
   "Applies a function `f` to each column vector in the dataset.

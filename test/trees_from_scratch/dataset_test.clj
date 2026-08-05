@@ -81,7 +81,23 @@
       (is (nil? (ds/get-type dropped-single :income)))
       (is (= #{:age} (set (ds/column-names dropped-multi))))
       (is (nil? (ds/get-column dropped-multi :label)))
-      (is (nil? (ds/get-type dropped-multi :label))))))
+      (is (nil? (ds/get-type dropped-multi :label)))))
+
+  (testing "renaming columns updates both columns and types maps"
+    (let [renamed (ds/rename-columns classification-dataset {:age :years-old, :income :earnings})]
+      (is (= #{:years-old :earnings :label} (set (ds/column-names renamed))))
+      (is (= :continuous (ds/get-type renamed :years-old)))
+      (is (= :continuous (ds/get-type renamed :earnings)))
+      (is (nil? (ds/get-column renamed :age)))
+      (is (nil? (ds/get-type renamed :income)))))
+
+  (testing "replacing an existing column updates values and type metadata"
+    (let [replaced (ds/replace-column classification-dataset :income [100 200 300 400 500])
+          replaced-type (ds/replace-column classification-dataset :income ["low" "low" "mid" "high" "high"] :categorical)]
+      (is (= [100 200 300 400 500] (ds/get-column replaced :income)))
+      (is (= :continuous (ds/get-type replaced :income)))
+      (is (= ["low" "low" "mid" "high" "high"] (ds/get-column replaced-type :income)))
+      (is (= :categorical (ds/get-type replaced-type :income))))))
 
 (deftest test-split-dataset
   (testing "splitting dataset with continuous feature"

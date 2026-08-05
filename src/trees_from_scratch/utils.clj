@@ -11,3 +11,10 @@
            frequencies
            vals
            (map #(/ (double %) n))))))
+
+(defn rename-key [m old-key new-key]
+  (if (contains? m old-key)
+    (-> m
+        (assoc new-key (get m old-key))
+        (dissoc old-key))
+    m))
