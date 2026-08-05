@@ -64,7 +64,24 @@
       ;; the function maps over all columns, even target variables
       (is (= ["No" "No" "Yes" "Yes" "Yes"] (ds/get-column mapped :label)))
       ;; types are preserved structurally
-      (is (= (:types classification-dataset) (:types mapped))))))
+      (is (= (:types classification-dataset) (:types mapped)))))
+
+  (testing "adding a column updates column data and infers/sets type metadata"
+    (let [added (ds/add-column classification-dataset :score [10 20 30 40 50])
+          added-cat (ds/add-column classification-dataset :group ["A" "A" "B" "B" "C"] :categorical)]
+      (is (= [10 20 30 40 50] (ds/get-column added :score)))
+      (is (= :continuous (ds/get-type added :score)))
+      (is (= ["A" "A" "B" "B" "C"] (ds/get-column added-cat :group)))
+      (is (= :categorical (ds/get-type added-cat :group)))))
+
+  (testing "dropping a column or set of columns removes them from columns and types"
+    (let [dropped-single (ds/drop-column classification-dataset :income)
+          dropped-multi  (ds/drop-column classification-dataset [:income :label])]
+      (is (= #{:age :label} (set (ds/column-names dropped-single))))
+      (is (nil? (ds/get-type dropped-single :income)))
+      (is (= #{:age} (set (ds/column-names dropped-multi))))
+      (is (nil? (ds/get-column dropped-multi :label)))
+      (is (nil? (ds/get-type dropped-multi :label))))))
 
 (deftest test-split-dataset
   (testing "splitting dataset with continuous feature"

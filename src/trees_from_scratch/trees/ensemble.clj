@@ -1,23 +1,34 @@
 (ns trees-from-scratch.trees.ensemble
-  "Tree ensemble representation and evaluation."
-  (:require [trees-from-scratch.trees.core :as tree-core]))
+  "Unified entry point for tree ensemble models (parallel and cascade)."
+  (:require [trees-from-scratch.trees.ensemble.parallel :as parallel]
+            [trees-from-scratch.trees.ensemble.cascade :as cascade])
+  (:import [trees_from_scratch.trees.ensemble.parallel ParallelEnsemble]))
 
-(defrecord Ensemble [agg trees]
-  tree-core/Tree
-  (predict [_ data-row]
-    (let [preds (map #(tree-core/predict % data-row) trees)]
-      (agg preds)))
-  (tree-depth [_]
-    (if (seq trees)
-      (apply max (map tree-core/tree-depth trees))
-      0))
-  (display-tree [this]
-    (println "Ensemble Tree:")
-    (tree-core/display-tree this 0 "Root: "))
-  (display-tree [_ depth branch-label]
-    (let [indent (apply str (repeat (* 2 depth) " "))]
-      (println indent branch-label "Ensemble of" (count trees) "trees")))
-  (get-trees [_] trees))
+(def Ensemble ParallelEnsemble)
 
-(defn make [agg & trees]
-  (->Ensemble agg trees))
+(defn make-parallel
+  "Creates a parallel tree ensemble."
+  ([agg & trees]
+   (apply parallel/make agg trees))
+
+  ([agg trees]
+   (apply parallel/make agg trees)))
+
+(defn make-cascade
+  "Creates a cascade (sequential) tree ensemble."
+  ([agg & trees]
+   (apply cascade/make agg trees))
+
+  ([agg trees]
+   (apply cascade/make agg trees))
+
+  ([agg cascade-fn trees]
+   (apply cascade/make agg cascade-fn trees))
+
+  ([agg cascade-fn & trees]
+   (apply cascade/make agg cascade-fn trees)))
+
+(defn make
+  "Creates an ensemble model. Defaults to parallel ensemble for backward compatibility."
+  ([agg & trees]
+   (apply make-parallel agg trees)))

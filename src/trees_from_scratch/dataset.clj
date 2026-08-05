@@ -35,6 +35,34 @@
   {:columns (select-keys (:columns dataset) col-keys)
    :types   (select-keys (:types dataset) col-keys)})
 
+(defn add-column
+  "Adds a new column to the dataset with given values `col-vec`.
+   `col-key` is the keyword identifier for the new column.
+   Optionally accepts `col-type` (:continuous or :categorical). If omitted, infers type from first element."
+  ([dataset col-key col-vec]
+   (add-column dataset col-key col-vec nil))
+  ([dataset col-key col-vec col-type]
+   (let [v (vec col-vec)
+         t (or col-type
+               (if (and (seq v) (number? (first v)))
+                 :continuous
+                 :categorical))]
+     (if (and (map? dataset) (contains? dataset :columns))
+       (-> dataset
+           (assoc-in [:columns col-key] v)
+           (assoc-in [:types col-key] t))
+       (assoc dataset col-key v)))))
+
+(defn drop-column
+  "Removes one or more columns from the dataset, updating both :columns and :types metadata."
+  [dataset col-key-or-keys]
+  (let [keys-to-drop (if (coll? col-key-or-keys) (set col-key-or-keys) #{col-key-or-keys})]
+    (if (and (map? dataset) (contains? dataset :columns))
+      (-> dataset
+          (update :columns #(apply dissoc % keys-to-drop))
+          (update :types #(apply dissoc % keys-to-drop)))
+      (apply dissoc dataset keys-to-drop))))
+
 (defn map-columns
   "Applies a function `f` to each column vector in the dataset.
    `f` should take a column vector and return a new column vector of the same size.
