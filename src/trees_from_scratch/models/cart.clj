@@ -6,20 +6,6 @@
             [trees-from-scratch.stopping :as stopping]
             [trees-from-scratch.models.core :as core]))
 
-(defn loss-reduction
-  "Calculates the reduction in loss (e.g., information gain) achieved by a split."
-  [parent-labels left-labels right-labels loss-fn]
-  (let [n       (count parent-labels)
-        n-left  (count left-labels)
-        n-right (count right-labels)]
-    (if (zero? n)
-      0.0
-      (let [weight-left  (/ (double n-left) n)
-            weight-right (/ (double n-right) n)]
-        (- (loss-fn parent-labels)
-           (+ (* weight-left  (loss-fn left-labels))
-              (* weight-right (loss-fn right-labels))))))))
-
 (defn vector-splits-continuous
   "Finds all possible continuous split points (midpoints between distinct values) for a feature vector."
   [v labels]
@@ -74,7 +60,7 @@
                     (map (fn [split-val]
                            (let [[left-labels right-labels] (partition-labels feat-type v parent-labels split-val)]
                              {:split-val split-val
-                              :loss-reduction (loss-reduction parent-labels left-labels right-labels loss-fn)})))
+                              :loss-reduction (core/loss-reduction parent-labels left-labels right-labels loss-fn)})))
                     (reduce (fn [best current]
                               (if (and (> (:loss-reduction current) 0.0)
                                        (or (nil? best) (> (:loss-reduction current) (:loss-reduction best))))

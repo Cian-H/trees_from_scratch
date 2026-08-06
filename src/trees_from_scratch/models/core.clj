@@ -3,6 +3,27 @@
   (:require [trees-from-scratch.dataset :as ds]
             [trees-from-scratch.trees.core :as tree-core]))
 
+(defn seeded-shuffle
+  "Shuffles a collection using the given java.util.Random instance."
+  [^java.util.Random rng coll]
+  (let [al (java.util.ArrayList. ^java.util.Collection coll)]
+    (java.util.Collections/shuffle al rng)
+    (vec al)))
+
+(defn loss-reduction
+  "Calculates the reduction in loss achieved by a split."
+  [parent-labels left-labels right-labels loss-fn]
+  (let [n       (count parent-labels)
+        n-left  (count left-labels)
+        n-right (count right-labels)]
+    (if (zero? n)
+      0.0
+      (let [weight-left  (/ (double n-left) n)
+            weight-right (/ (double n-right) n)]
+        (- (loss-fn parent-labels)
+           (+ (* weight-left  (loss-fn left-labels))
+              (* weight-right (loss-fn right-labels))))))))
+
 (defn majority-class
   "Finds the most frequent class in a sequence of labels."
   [labels]

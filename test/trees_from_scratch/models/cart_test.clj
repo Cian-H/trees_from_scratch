@@ -36,21 +36,21 @@
     (let [parent ["Yes" "Yes" "No" "No"]
           left   ["Yes" "Yes"]
           right  ["No" "No"]
-          reduction (cart/loss-reduction parent left right loss/gini)]
+          reduction (core/loss-reduction parent left right loss/gini)]
       (is (approx= 0.5 reduction))))
 
   (testing "useless split produces zero reduction"
     (let [parent ["Yes" "No" "Yes" "No"]
           left   ["Yes" "No"]
           right  ["Yes" "No"]
-          reduction (cart/loss-reduction parent left right loss/gini)]
+          reduction (core/loss-reduction parent left right loss/gini)]
       (is (approx= 0.0 reduction))))
 
   (testing "regression loss reduction using mean-squared-deviation"
     (let [parent [10.0 10.0 100.0 100.0]
           left   [10.0 10.0]
           right  [100.0 100.0]
-          reduction (cart/loss-reduction parent left right loss/mean-squared-deviation)]
+          reduction (core/loss-reduction parent left right loss/mean-squared-deviation)]
       (is (> reduction 0.0)))))
 
 (deftest test-best-split
