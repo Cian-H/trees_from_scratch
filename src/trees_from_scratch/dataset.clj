@@ -146,6 +146,28 @@
     [(select-rows dataset indices-left)
      (select-rows dataset indices-right)]))
 
+(defn split-by-oblique
+  "Splits a dataset based on an oblique linear combination of features.
+   weights is a map of {col-key weight}.
+   Left dataset contains rows where (sum(val * weight)) <= threshold."
+  [dataset weights threshold]
+  (let [num-rows (row-count dataset)
+        [indices-left indices-right]
+        (reduce (fn [[l r] idx]
+                  (let [projected-val (reduce-kv (fn [acc k w]
+                                                   (let [col (get-column dataset k)
+                                                         val (double (nth col idx 0.0))]
+                                                     (+ acc (* val (double w)))))
+                                                 0.0
+                                                 weights)]
+                    (if (<= projected-val threshold)
+                      [(conj l idx) r]
+                      [l (conj r idx)])))
+                [[] []]
+                (range num-rows))]
+    [(select-rows dataset indices-left)
+     (select-rows dataset indices-right)]))
+
 (defn from-tablecloth
   "Converts a tech.ml.dataset into a trees-from-scratch.dataset."
   [ds]

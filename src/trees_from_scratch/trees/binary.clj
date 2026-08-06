@@ -1,6 +1,7 @@
 (ns trees-from-scratch.trees.binary
   "Binary decision tree representation and evaluation."
-  (:require [trees-from-scratch.trees.core :as tree-core]))
+  (:require [trees-from-scratch.trees.core :as tree-core]
+            [clojure.string :as str]))
 
 (defrecord BinaryLeaf [prediction]
   tree-core/Tree
@@ -59,4 +60,16 @@
   [feature category left right]
   (let [desc (str "Is " feature " == " category " ?")
         pred (fn [row] (= (get row feature) category))]
+    (make-split desc pred left right)))
+
+(defn make-oblique-split
+  "Creates an oblique split node that evaluates whether a linear combination of features is <= threshold."
+  [weights threshold left right]
+  (let [desc (str "Is "
+                  (str/join " + "
+                            (map (fn [[f w]] (format "%.3f*%s" (double w) (name f))) weights))
+                  " <= " (format "%.3f" (double threshold)) " ?")
+        pred (fn [row]
+               (let [projected-val (reduce + (map (fn [[f w]] (* (double (get row f 0.0)) (double w))) weights))]
+                 (<= projected-val threshold)))]
     (make-split desc pred left right)))
