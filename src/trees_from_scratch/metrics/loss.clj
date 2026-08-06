@@ -1,7 +1,7 @@
-(ns trees-from-scratch.loss
+(ns trees-from-scratch.metrics.loss
   "Loss functions and impurity metrics for classification and regression trees."
-  (:require [trees-from-scratch.maths :refer [log2 mean median]]
-            [trees-from-scratch.utils :refer [class-probabilities]]))
+  (:require [trees-from-scratch.utils.maths :refer [log2 mean median]]
+            [trees-from-scratch.utils.core :refer [class-probabilities]]))
 
 (defn gini
   "Calculates the Gini impurity for a sequence of categorical labels."

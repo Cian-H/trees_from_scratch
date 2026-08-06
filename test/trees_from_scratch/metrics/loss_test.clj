@@ -1,12 +1,12 @@
-(ns trees-from-scratch.loss-test
+(ns trees-from-scratch.metrics.loss-test
   (:require [clojure.test :refer [deftest is testing]]
-            [trees-from-scratch.loss :refer [gini
-                                             entropy
-                                             misclassification-rate
-                                             mean-squared-deviation
-                                             mean-absolute-deviation
-                                             poisson-deviance]]
-            [trees-from-scratch.test-utils :refer [approx=]]))
+            [trees-from-scratch.metrics.loss :refer [gini
+                                                     entropy
+                                                     misclassification-rate
+                                                     mean-squared-deviation
+                                                     mean-absolute-deviation
+                                                     poisson-deviance]]
+            [trees-from-scratch.utils.core-test :refer [approx=]]))
 
 (deftest test-gini
   (testing "Perfect purity (one class)"

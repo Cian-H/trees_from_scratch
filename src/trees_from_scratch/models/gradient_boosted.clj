@@ -1,11 +1,11 @@
 (ns trees-from-scratch.models.gradient-boosted
   "Implementation of the the Gradient Boosted Decision Tree algorithm."
-  (:require [trees-from-scratch.dataset :as ds]
-            [trees-from-scratch.maths :refer [matrix-sub]]
-            [trees-from-scratch.utils :as utils]
+  (:require [trees-from-scratch.data.dataset :as ds]
+            [trees-from-scratch.utils.maths :refer [matrix-sub]]
+            [trees-from-scratch.utils.core :as utils]
             [trees-from-scratch.trees.ensemble :as ensemble]
             [trees-from-scratch.models.cart :as cart]
-            [trees-from-scratch.models.core :as core]))
+            [trees-from-scratch.metrics.evaluation :as evaluation]))
 
 (defn calculate-residuals [preds target]
   (matrix-sub target preds))
@@ -32,7 +32,7 @@
               trees      []]
          (if (< (count trees) max-trees)
            (let [tree         (cart/train current-ds :residuals opt)
-                 preds        (core/predict-all tree current-ds)
+                 preds        (evaluation/predict-all tree current-ds)
                  scaled-preds (map #(* learning-rate %) preds)
                  res-in       (ds/get-column current-ds :residuals)
                  res-out      (calculate-residuals scaled-preds res-in)]

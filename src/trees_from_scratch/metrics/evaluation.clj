@@ -1,14 +1,8 @@
-(ns trees-from-scratch.models.core
+(ns trees-from-scratch.metrics.evaluation
   "Core model evaluation and prediction functions."
-  (:require [trees-from-scratch.dataset :as ds]
-            [trees-from-scratch.trees.core :as tree-core]))
-
-(defn seeded-shuffle
-  "Shuffles a collection using the given java.util.Random instance."
-  [^java.util.Random rng coll]
-  (let [al (java.util.ArrayList. ^java.util.Collection coll)]
-    (java.util.Collections/shuffle al rng)
-    (vec al)))
+  (:require [trees-from-scratch.data.dataset :as ds]
+            [trees-from-scratch.trees.core :as tree-core]
+            [trees-from-scratch.utils.core :as utils]))
 
 (defn loss-reduction
   "Calculates the reduction in loss achieved by a split."
@@ -23,23 +17,6 @@
         (- (loss-fn parent-labels)
            (+ (* weight-left  (loss-fn left-labels))
               (* weight-right (loss-fn right-labels))))))))
-
-(defn majority-class
-  "Finds the most frequent class in a sequence of labels."
-  [labels]
-  (when (seq labels)
-    (->> labels
-         frequencies
-         (sort-by val >)
-         ffirst)))
-
-(defn mean-target
-  "Calculates the mean value of a sequence of continuous targets."
-  [values]
-  (when values
-    (if (empty? values)
-      0.0
-      (/ (apply + values) (count values)))))
 
 (defn predict-all
   "Predicts the target for all rows in a dataset using the given tree."
@@ -62,7 +39,7 @@
                      (/ (double correct) (count actuals)))
          :mse      (let [errors (map (fn [p a] (let [d (- p a)] (* d d))) predictions actuals)]
                      (/ (reduce + 0.0 errors) (count actuals)))
-         :r2       (let [mean-actual (mean-target actuals)
+         :r2       (let [mean-actual (utils/mean-target actuals)
                          sst         (reduce + 0.0 (map (fn [a] (let [d (- a mean-actual)] (* d d))) actuals))
                          sse         (reduce + 0.0 (map (fn [p a] (let [d (- p a)] (* d d))) predictions actuals))]
                      (if (zero? sst)

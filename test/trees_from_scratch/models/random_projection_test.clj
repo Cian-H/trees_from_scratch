@@ -1,8 +1,8 @@
 (ns trees-from-scratch.models.random-projection-test
   (:require [clojure.test :refer [deftest is testing]]
-            [trees-from-scratch.dataset :as ds]
+            [trees-from-scratch.data.dataset :as ds]
             [trees-from-scratch.models.random-projection :as rp]
-            [trees-from-scratch.models.core :as core]))
+            [trees-from-scratch.metrics.evaluation :as evaluation]))
 
 (def regression-dataset
   {:columns {:experience [1 2 5 8 9]
@@ -17,7 +17,7 @@
     ;; Note: Categorical features are ignored, so it should only train on :experience
     (let [rp-model (rp/train regression-dataset :salary {:task-type :regression})]
       (is (some? rp-model))
-      (let [preds (core/predict-all rp-model regression-dataset)]
+      (let [preds (evaluation/predict-all rp-model regression-dataset)]
         (is (= (ds/row-count regression-dataset) (count preds)))))))
 
 (deftest test-train-classification-throws

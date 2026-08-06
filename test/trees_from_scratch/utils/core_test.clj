@@ -1,4 +1,4 @@
-(ns trees-from-scratch.test-utils)
+(ns trees-from-scratch.utils.core-test)
 
 (defn approx=
   ([a b] (approx= a b 1e-5))

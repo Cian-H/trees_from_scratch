@@ -1,7 +1,7 @@
-(ns trees-from-scratch.dataset-test
+(ns trees-from-scratch.data.dataset-test
   (:require [clojure.test :refer [deftest is testing]]
-            [trees-from-scratch.test-utils :refer [with-temp-file]]
-            [trees-from-scratch.dataset :as ds]
+            [trees-from-scratch.utils.core-test :refer [with-temp-file]]
+            [trees-from-scratch.data.dataset :as ds]
             [tech.v3.dataset.sql :as sql]))
 
 (def classification-dataset
@@ -124,6 +124,7 @@
                        :target [0 1 1]}]
 
     (testing "CSV Round-Trip"
+      #_{:clj-kondo/ignore [:unresolved-symbol]}
       (with-temp-file [filepath ["test-data" ".csv"]]
         (ds/to-csv original-data filepath)
         (let [read-data (ds/from-csv filepath)]

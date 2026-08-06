@@ -1,8 +1,8 @@
 (ns trees-from-scratch.models.gradient-boosted-test
   (:require [clojure.test :refer [deftest is testing]]
-            [trees-from-scratch.dataset :as ds]
+            [trees-from-scratch.data.dataset :as ds]
             [trees-from-scratch.models.gradient-boosted :as gbdt]
-            [trees-from-scratch.models.core :as core]))
+            [trees-from-scratch.metrics.evaluation :as evaluation]))
 
 (def regression-dataset
   {:columns {:experience [1 2 5 8 9]
@@ -16,7 +16,7 @@
   (testing "training a gradient boosted tree on regression dataset"
     (let [gbdt-model (gbdt/train regression-dataset :salary {:task-type :regression :learning-rate 0.1 :max-trees 5})]
       (is (some? gbdt-model))
-      (let [preds (core/predict-all gbdt-model regression-dataset)]
+      (let [preds (evaluation/predict-all gbdt-model regression-dataset)]
         (is (= (ds/row-count regression-dataset) (count preds)))))))
 
 (deftest test-train-classification-throws

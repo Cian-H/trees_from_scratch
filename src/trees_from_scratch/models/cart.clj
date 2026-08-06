@@ -1,10 +1,10 @@
 (ns trees-from-scratch.models.cart
   "Implementation of the CART (Classification and Regression Trees) algorithm."
-  (:require [trees-from-scratch.loss :as loss]
-            [trees-from-scratch.dataset :as ds]
-            [trees-from-scratch.trees.binary :as btree]
-            [trees-from-scratch.stopping :as stopping]
-            [trees-from-scratch.models.core :as core]))
+  (:require [trees-from-scratch.metrics.loss :as loss]
+            [trees-from-scratch.data.dataset :as ds]
+            [trees-from-scratch.trees.stopping :as stopping]
+            [trees-from-scratch.metrics.evaluation :as evaluation]
+            [trees-from-scratch.trees.builder :as builder]))
 
 (defn vector-splits-continuous
   "Finds all possible continuous split points (midpoints between distinct values) for a feature vector."
@@ -60,7 +60,7 @@
                     (map (fn [split-val]
                            (let [[left-labels right-labels] (partition-labels feat-type v parent-labels split-val)]
                              {:split-val split-val
-                              :loss-reduction (core/loss-reduction parent-labels left-labels right-labels loss-fn)})))
+                              :loss-reduction (evaluation/loss-reduction parent-labels left-labels right-labels loss-fn)})))
                     (reduce (fn [best current]
                               (if (and (> (:loss-reduction current) 0.0)
                                        (or (nil? best) (> (:loss-reduction current) (:loss-reduction best))))
@@ -72,6 +72,7 @@
                                  (ds/split-by-categorical dataset feat (:split-val best-split-val)))]
         (assoc best-split-val
                :type feat-type
+               :feature feat
                :left left-ds
                :right right-ds)))))
 
@@ -86,9 +87,7 @@
    (let [available-features (or features (remove #{target-key} (ds/column-names dataset)))]
      (->> available-features
           (map (fn [feat]
-                 (let [best-split-for-feat (best-vector-split dataset feat target-key loss-fn)]
-                   (when best-split-for-feat
-                     (assoc best-split-for-feat :feature feat)))))
+                 (best-vector-split dataset feat target-key loss-fn)))
           (remove nil?)
           (reduce (fn [best current]
                     (if (or (nil? best) (> (:loss-reduction current) (:loss-reduction best)))
@@ -96,50 +95,19 @@
                       best))
                   nil)))))
 
-(defmulti default-loss-fn
-  "Returns the default loss function for a given task type."
-  identity)
-(defmethod default-loss-fn :classification [_] loss/gini)
-(defmethod default-loss-fn :regression [_] loss/mean-squared-deviation)
-
-(defmulti make-leaf-node
-  "Creates a leaf node appropriate for the task type."
-  (fn [task-type _dataset _target-key] task-type))
-(defmethod make-leaf-node :classification [_ dataset target-key]
-  (btree/make-leaf (core/majority-class (ds/get-column dataset target-key))))
-(defmethod make-leaf-node :regression [_ dataset target-key]
-  (btree/make-leaf (core/mean-target (ds/get-column dataset target-key))))
-
-(defmulti make-split-node
-  "Creates a split node appropriate for the feature type."
-  (fn [type _feature _split-val _left _right] type))
-(defmethod make-split-node :continuous [_ feature split-val left right]
-  (btree/make-continuous-split feature split-val left right))
-(defmethod make-split-node :categorical [_ feature split-val left right]
-  (btree/make-categorical-split feature split-val left right))
-
 (defn train
   "Trains a CART decision tree on the given dataset."
   ([dataset target-key]
    (train dataset target-key {}))
 
-  ([dataset target-key {:keys [task-type stop loss-fn features depth]
+  ([dataset target-key {:keys [task-type stop loss-fn]
                         :or   {task-type :classification
-                               stop      stopping/cart-stopping-strategy
-                               depth     0}
+                               stop      stopping/cart-stopping-strategy}
                         :as   opt}]
-   (let [{:keys [early-exit late-exit]} stop
-         loss-fn     (or loss-fn (default-loss-fn task-type))
-         features    (or features (remove #{target-key} (ds/column-names dataset)))
-         m           (:max-features opt)
-         sampled-features (if m (vec (take m (shuffle features))) features)
-         early?      (early-exit opt dataset target-key)
-         new-split   (when-not early? (best-split dataset target-key {:features sampled-features :loss-fn loss-fn}))
-         late?       (and new-split (late-exit opt new-split target-key))]
-     (if (or early? late? (nil? new-split))
-       (make-leaf-node task-type dataset target-key)
-       (let [{:keys [feature split-val left right type]} new-split
-             next-opt   (assoc opt :depth (inc depth))
-             left-node  (train left target-key next-opt)
-             right-node (train right target-key next-opt)]
-         (make-split-node type feature split-val left-node right-node))))))
+   (let [loss-fn (or loss-fn (builder/default-loss-fn task-type))
+         best-split-fn (fn [ds tgt o]
+                         (let [feats (or (:features o) (remove #{tgt} (ds/column-names ds)))
+                               m (:max-features o)
+                               sampled (if m (vec (take m (shuffle feats))) feats)]
+                           (best-split ds tgt (assoc o :features sampled :loss-fn loss-fn))))]
+     (builder/build-tree dataset target-key (assoc opt :loss-fn loss-fn :stop stop :task-type task-type) best-split-fn))))

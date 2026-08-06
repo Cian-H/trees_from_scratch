@@ -1,7 +1,7 @@
 (ns trees-from-scratch.spatial.hyperplane
   "Shared logic for hyperplane-based tree models (Oblique, Random Projection)."
-  (:require [trees-from-scratch.dataset :as ds]
-            [trees-from-scratch.models.core :as core]))
+  (:require [trees-from-scratch.data.dataset :as ds]
+            [trees-from-scratch.metrics.evaluation :as evaluation]))
 
 ;; -- Categorical splits remain the same (axis-aligned) --
 (defn vector-splits-categorical [v] (distinct v))
@@ -22,7 +22,7 @@
                     (map (fn [split-val]
                            (let [[left-labels right-labels] (partition-labels-categorical v parent-labels split-val)]
                              {:split-val split-val
-                              :loss-reduction (core/loss-reduction parent-labels left-labels right-labels loss-fn)})))
+                              :loss-reduction (evaluation/loss-reduction parent-labels left-labels right-labels loss-fn)})))
                     (reduce (fn [best current]
                               (if (and (> (:loss-reduction current) 0.0)
                                        (or (nil? best) (> (:loss-reduction current) (:loss-reduction best))))
@@ -70,4 +70,4 @@
                       [l (conj r (nth parent-labels idx))])))
                 [[] []]
                 indices)]
-    (assoc candidate :loss-reduction (core/loss-reduction subset-labels left-labels right-labels loss-fn))))
+    (assoc candidate :loss-reduction (evaluation/loss-reduction subset-labels left-labels right-labels loss-fn))))

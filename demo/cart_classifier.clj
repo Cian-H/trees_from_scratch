@@ -1,7 +1,7 @@
 (ns cart-classifier
-  (:require [trees-from-scratch.dataset :as ds]
+  (:require [trees-from-scratch.data.dataset :as ds]
             [trees-from-scratch.models.cart :as cart]
-            [trees-from-scratch.models.core :as models.core]
+            [trees-from-scratch.metrics.evaluation :as evaluation]
             [trees-from-scratch.trees.core :as tree-core]
             [utils]))
 
@@ -22,10 +22,10 @@
 
 (println "Tree fitted successfully.")
 (println "Evaluating fit on training data...")
-(def train-accuracy (models.core/evaluate tree train-dataset target :accuracy))
+(def train-accuracy (evaluation/evaluate tree train-dataset target :accuracy))
 (println (format "Training Accuracy: %.2f%%" (* 100.0 train-accuracy)))
 
 (println "Evaluating fit on testing data...")
-(def test-accuracy (models.core/evaluate tree test-dataset target :accuracy))
+(def test-accuracy (evaluation/evaluate tree test-dataset target :accuracy))
 (println (format "Testing Accuracy: %.2f%%" (* 100.0 test-accuracy)))
 (tree-core/display-tree tree)

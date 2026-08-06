@@ -1,8 +1,8 @@
 (ns trees-from-scratch.models.oblique-test
   (:require [clojure.test :refer [deftest is testing]]
-            [trees-from-scratch.dataset :as ds]
+            [trees-from-scratch.data.dataset :as ds]
             [trees-from-scratch.models.oblique :as obl]
-            [trees-from-scratch.models.core :as core]))
+            [trees-from-scratch.metrics.evaluation :as evaluation]))
 
 (def regression-dataset
   {:columns {:experience [1 2 5 8 9]
@@ -16,7 +16,7 @@
   (testing "training an oblique tree on regression dataset"
     (let [obl-model (obl/train regression-dataset :salary {:task-type :regression})]
       (is (some? obl-model))
-      (let [preds (core/predict-all obl-model regression-dataset)]
+      (let [preds (evaluation/predict-all obl-model regression-dataset)]
         (is (= (ds/row-count regression-dataset) (count preds)))))))
 
 (deftest test-train-classification-throws

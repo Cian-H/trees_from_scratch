@@ -1,6 +1,6 @@
-(ns trees-from-scratch.stopping-test
+(ns trees-from-scratch.trees.stopping-test
   (:require [clojure.test :refer [deftest is testing]]
-            [trees-from-scratch.stopping :as stopping]))
+            [trees-from-scratch.trees.stopping :as stopping]))
 
 (def classification-dataset
   {:columns {:x [1 2 3 4]

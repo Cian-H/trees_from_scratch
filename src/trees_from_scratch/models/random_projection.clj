@@ -1,10 +1,11 @@
 (ns trees-from-scratch.models.random-projection
   "Implementation of Random Projection Trees for continuous features."
-  (:require [trees-from-scratch.dataset :as ds]
-            [trees-from-scratch.trees.binary :as btree]
-            [trees-from-scratch.stopping :as stopping]
-            [trees-from-scratch.loss :as loss]
-            [trees-from-scratch.models.core :as core]))
+  (:require [trees-from-scratch.data.dataset :as ds]
+            [trees-from-scratch.trees.stopping :as stopping]
+            [trees-from-scratch.metrics.loss :as loss]
+            [trees-from-scratch.metrics.evaluation :as evaluation]
+            [trees-from-scratch.utils.core :as utils]
+            [trees-from-scratch.trees.builder :as builder]))
 
 (defn random-oblique-split
   "Generates a single completely random projection vector and picks a threshold uniformly between min and max."
@@ -35,7 +36,7 @@
                             [l (conj r label)]))
                         [[] []]
                         (map vector projected-vals parent-labels))
-                loss-reduction-val (core/loss-reduction parent-labels left-labels right-labels loss/mean-squared-deviation)
+                loss-reduction-val (evaluation/loss-reduction parent-labels left-labels right-labels loss/mean-squared-deviation)
                 [left-ds right-ds] (ds/split-by-oblique dataset weights threshold)]
 
             (assoc candidate
@@ -49,27 +50,19 @@
   ([dataset target-key]
    (train dataset target-key {}))
 
-  ([dataset target-key {:keys [task-type stop features depth]
+  ([dataset target-key {:keys [task-type stop]
                         :or   {task-type :regression
-                               stop      stopping/cart-stopping-strategy
-                               depth     0}
+                               stop      stopping/cart-stopping-strategy}
                         :as   opt}]
    (if (not= task-type :regression)
      (throw (ex-info "Random Projection trees currently only support regression" {:task-type task-type}))
      (let [rng         (java.util.Random. (hash dataset))
-           {:keys [early-exit late-exit]} stop
-           features    (or features (remove #{target-key} (ds/column-names dataset)))
-           ;; Only allow continuous features for Random Projection trees
-           cont-features (filter #(= (ds/get-type dataset %) :continuous) features)
-           m           (:max-features opt)
-           sampled-features (if m (vec (take m (core/seeded-shuffle rng cont-features))) cont-features)
-           early?      (early-exit opt dataset target-key)
-           new-split   (when-not early? (random-oblique-split dataset sampled-features target-key rng))
-           late?       (and new-split (late-exit opt new-split target-key))]
-       (if (or early? late? (nil? new-split))
-         (btree/make-leaf (core/mean-target (ds/get-column dataset target-key)))
-         (let [{:keys [left right]} new-split
-               next-opt   (assoc opt :depth (inc depth))
-               left-node  (train left target-key next-opt)
-               right-node (train right target-key next-opt)]
-           (btree/make-oblique-split (:weights new-split) (:threshold new-split) left-node right-node)))))))
+           loss-fn     (builder/default-loss-fn task-type)
+           best-split-fn (fn [ds tgt o]
+                           (let [feats (or (:features o) (remove #{tgt} (ds/column-names ds)))
+                                 ;; Only allow continuous features for Random Projection trees
+                                 cont-features (filter #(= (ds/get-type ds %) :continuous) feats)
+                                 m (:max-features o)
+                                 sampled (if m (vec (take m (utils/seeded-shuffle rng cont-features))) cont-features)]
+                             (random-oblique-split ds sampled tgt rng)))]
+       (builder/build-tree dataset target-key (assoc opt :loss-fn loss-fn :stop stop :task-type task-type) best-split-fn)))))

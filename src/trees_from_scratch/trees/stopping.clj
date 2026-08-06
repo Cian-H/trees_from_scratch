@@ -1,7 +1,7 @@
-(ns trees-from-scratch.stopping
+(ns trees-from-scratch.trees.stopping
   "Defines stopping criteria strategies for building decision trees."
-  (:require [trees-from-scratch.dataset :as ds]
-            [trees-from-scratch.models.core :as core]))
+  (:require [trees-from-scratch.data.dataset :as ds]
+            [trees-from-scratch.utils.core :as utils]))
 
 (defn cart-early-exit?
   "Determines if tree growth should stop before evaluating splits based on depth, sample count, or label purity."
@@ -23,8 +23,8 @@
         redundant-split?   (if (= (:task-type options :classification) :classification)
                              (let [left-labels  (ds/get-column (:left split-record) target-key)
                                    right-labels (ds/get-column (:right split-record) target-key)]
-                               (= (core/majority-class left-labels)
-                                  (core/majority-class right-labels)))
+                               (= (utils/majority-class left-labels)
+                                  (utils/majority-class right-labels)))
                              false)]
     (or insufficient-loss? redundant-split?)))
 

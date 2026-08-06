@@ -1,9 +1,10 @@
 (ns trees-from-scratch.models.random-forest
   "Implementation of the the Random Forest algorithm."
-  (:require [trees-from-scratch.dataset :as ds]
+  (:require [trees-from-scratch.data.dataset :as ds]
             [trees-from-scratch.trees.ensemble :as ensemble]
             [trees-from-scratch.models.cart :as cart]
-            [trees-from-scratch.models.core :as core]))
+            [trees-from-scratch.utils.core :as utils]
+            [trees-from-scratch.metrics.evaluation :as evaluation]))
 
 (defn get-random-features [m features]
   (vec (take m (shuffle features))))
@@ -70,15 +71,15 @@
                           delta  (if (zero? oldest) 0 (/ (- oldest newest) oldest))]
                       (< delta min-delta))))
          (let [agg-fn (case task-type
-                        :classification core/majority-class
-                        :regression     core/mean-target)]
+                        :classification utils/majority-class
+                        :regression     utils/mean-target)]
            (apply ensemble/make agg-fn forest))
          (let [{:keys [train-ds oob-ds oob-idx]} (bootstrap-with-oob dataset)
                tree            (cart/train
                                 train-ds
                                 target-key
                                 (assoc opt :max-features m))
-               oob-preds       (core/predict-all tree oob-ds)
+               oob-preds       (evaluation/predict-all tree oob-ds)
                new-pmatrix     (update-pred-matrix pmatrix oob-preds oob-idx)
                new-error       (calculate-forest-error new-pmatrix target-vector opt)]
            (recur (conj forest tree)

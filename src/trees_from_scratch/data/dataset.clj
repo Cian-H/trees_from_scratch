@@ -1,4 +1,4 @@
-(ns trees-from-scratch.dataset
+(ns trees-from-scratch.data.dataset
   "Core dataset representation and manipulation functions."
   (:require [tablecloth.api :as tc]
             [tech.v3.dataset.sql :as sql]
@@ -200,7 +200,7 @@
       from-tablecloth))
 
 (defn to-tablecloth
-  "Converts a trees-from-scratch.dataset into a Tablecloth dataset."
+  "Converts a trees-from-scratch.data.dataset into a Tablecloth dataset."
   [custom-ds]
   (tc/dataset custom-ds))
 
@@ -211,14 +211,14 @@
     (throw (IllegalArgumentException. (str "Filepath must end with " ext)))))
 
 (defn to-file
-  "Writes a trees-from-scratch.dataset to a file, inferring the format from the file extension."
+  "Writes a trees-from-scratch.data.dataset to a file, inferring the format from the file extension."
   [custom-ds filepath]
   (-> custom-ds
       (to-tablecloth)
       (tc/write! filepath)))
 
 (defn to-csv
-  "Writes a trees-from-scratch.dataset to a CSV file. Validates that the filepath ends with .csv"
+  "Writes a trees-from-scratch.data.dataset to a CSV file. Validates that the filepath ends with .csv"
   [custom-ds filepath]
   (validate-extension! filepath ".csv")
   (to-file custom-ds filepath))
@@ -230,7 +230,7 @@
   (to-file custom-ds filepath))
 
 (defn to-parquet
-  "Writes a trees-from-scratch.dataset to a Parquet file. Validates that the filepath ends with .parquet"
+  "Writes a trees-from-scratch.data.dataset to a Parquet file. Validates that the filepath ends with .parquet"
   [custom-ds filepath]
   (validate-extension! filepath ".parquet")
   (to-file custom-ds filepath))

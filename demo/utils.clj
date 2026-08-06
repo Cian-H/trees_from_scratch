@@ -1,5 +1,5 @@
 (ns utils
-  (:require [trees-from-scratch.dataset :as ds]
+  (:require [trees-from-scratch.data.dataset :as ds]
             [clojure.java.io :as io]))
 
 (defn fetch-and-cache

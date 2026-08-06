@@ -1,11 +1,11 @@
 (ns trees-from-scratch.models.cart-test
   (:require [clojure.test :refer [deftest is testing]]
-            [trees-from-scratch.loss :as loss]
-            [trees-from-scratch.dataset :as ds]
+            [trees-from-scratch.metrics.loss :as loss]
+            [trees-from-scratch.data.dataset :as ds]
             [trees-from-scratch.models.cart :as cart]
             [trees-from-scratch.trees.core :as tree-core]
-            [trees-from-scratch.models.core :as core]
-            [trees-from-scratch.test-utils :refer [approx=]]))
+            [trees-from-scratch.metrics.evaluation :as evaluation]
+            [trees-from-scratch.utils.core-test :refer [approx=]]))
 
 (def classification-dataset
   {:columns {:age    [15 22 35 45 50]
@@ -36,21 +36,21 @@
     (let [parent ["Yes" "Yes" "No" "No"]
           left   ["Yes" "Yes"]
           right  ["No" "No"]
-          reduction (core/loss-reduction parent left right loss/gini)]
+          reduction (evaluation/loss-reduction parent left right loss/gini)]
       (is (approx= 0.5 reduction))))
 
   (testing "useless split produces zero reduction"
     (let [parent ["Yes" "No" "Yes" "No"]
           left   ["Yes" "No"]
           right  ["Yes" "No"]
-          reduction (core/loss-reduction parent left right loss/gini)]
+          reduction (evaluation/loss-reduction parent left right loss/gini)]
       (is (approx= 0.0 reduction))))
 
   (testing "regression loss reduction using mean-squared-deviation"
     (let [parent [10.0 10.0 100.0 100.0]
           left   [10.0 10.0]
           right  [100.0 100.0]
-          reduction (core/loss-reduction parent left right loss/mean-squared-deviation)]
+          reduction (evaluation/loss-reduction parent left right loss/mean-squared-deviation)]
       (is (> reduction 0.0)))))
 
 (deftest test-best-split
@@ -109,19 +109,19 @@
 (deftest test-predict-all
   (testing "predict-all returns vector of predictions"
     (let [dt-model (cart/train classification-dataset :label {:max-depth 3})
-          preds    (core/predict-all dt-model classification-dataset)]
+          preds    (evaluation/predict-all dt-model classification-dataset)]
       (is (= (ds/row-count classification-dataset) (count preds)))
       (is (= ["No" "No" "Yes" "Yes" "Yes"] preds)))))
 
 (deftest test-evaluate
   (testing "evaluating classification accuracy"
     (let [dt-model (cart/train classification-dataset :label {:max-depth 3})
-          acc      (core/evaluate dt-model classification-dataset :label :accuracy)]
+          acc      (evaluation/evaluate dt-model classification-dataset :label :accuracy)]
       (is (approx= 1.0 acc))))
 
   (testing "evaluating regression mean squared error (MSE)"
     (let [dt-model (cart/train regression-dataset :salary {:task-type :regression
                                                            :max-depth 5})
-          mse      (core/evaluate dt-model regression-dataset :salary :mse)]
+          mse      (evaluation/evaluate dt-model regression-dataset :salary :mse)]
       (is (number? mse))
       (is (>= mse 0.0)))))

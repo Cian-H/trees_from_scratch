@@ -1,4 +1,4 @@
-(ns trees-from-scratch.maths
+(ns trees-from-scratch.utils.maths
   "Mathematical utility functions used throughout the library.")
 
 (def ^:const ln2 (Math/log 2.0))
